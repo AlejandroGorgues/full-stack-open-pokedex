@@ -18,8 +18,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Check if skiP
-        run: echo "SKIP_DEPLOY=${{ contains(toJson(github.event.commits.*.message), '#skip') }}" >> $GITHUB_ENV
+      - name: Check if skip
+        run: |
+              echo "SKIP_DEPLOY=${{ contains(join(toJson(github.event.commits.*.message), ','), '#skip') }}" >> $GITHUB_ENV
+              echo "${{ toJson(github.event.commits.*.message) }}"
+              echo "${{ join(toJson(github.event.commits.*.message), ',') }}"
+              echo "${{ contains(join(toJson(github.event.commits.*.message), ','), '#skip') }}"
       - name: Install dependencies
         run: npm install
       - name: Install Playwright Browsers
@@ -39,7 +43,7 @@ jobs:
           path: playwright-report/
           retention-days: 1
       - name: Trigger deployment
-        if: ${{ github.event_name == 'push' }} && ${{ env.SKIP_DEPLOY == 'false' }}
+        if: ${{ github.event_name == 'push' }} || ${{ env.SKIP_DEPLOY == 'false' }}
         run: curl https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
   tag_release:
     needs: [simple_deployment_pipeline]
@@ -47,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Bump version and push tag
-        if: ${{ github.event_name == 'push' }} && ${{ env.SKIP_DEPLOY == 'false' }}
+        if: ${{ github.event_name == 'push' }} || ${{ env.SKIP_DEPLOY == 'false' }}
         uses: anothrNick/github-tag-action@1.71.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
