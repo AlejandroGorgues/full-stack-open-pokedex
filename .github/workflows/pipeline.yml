@@ -1,5 +1,8 @@
 name: Deployment pipeline
 
+env:
+  CONDITION: ${{ contains('#skip', toJson(github.event.commits.*.message)) }}
+
 on:
   push:
     branches:
@@ -7,6 +10,7 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize]
+
 jobs:
   simple_deployment_pipeline:
     runs-on: ubuntu-20.04
@@ -34,7 +38,7 @@ jobs:
           path: playwright-report/
           retention-days: 1
       - name: Trigger deployment
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' }} && ${{ env.CONDITION == 'true' }}
         run: curl https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
   tag_release:
     needs: [simple_deployment_pipeline]
@@ -42,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Bump version and push tag
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' }} && ${{ env.CONDITION == 'false' }}
         uses: anothrNick/github-tag-action@1.71.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
