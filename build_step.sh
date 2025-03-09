@@ -1,6 +1,6 @@
 #!/bin/bash
-
+npm install 
 npm start build
-node app.js
+
 
 # add the commands here
