@@ -1,7 +1,6 @@
 name: Deployment pipeline
 
-env:
-  SKIP_DEPLOY: ${{ contains(toJson(github.event.commits.*.message), '#skip') }}
+
 
 on:
   push:
@@ -19,6 +18,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Check if skip
+        env:
+          SKIP_DEPLOY: ${{ contains(toJson(github.event.commits.*.message), '#skip') }}
       - name: Install dependencies
         run: npm install
       - name: Install Playwright Browsers
