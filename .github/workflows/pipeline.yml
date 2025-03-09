@@ -1,7 +1,6 @@
 name: Deployment pipeline
 
-env:
-  SKIP_DEPLOY: ${{ contains(toJson(github.event.commits.*.message)), '#skip'}}
+
 
 on:
   push:
@@ -19,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Check if skiP
+        run: echo "SKIP_DEPLOY=${{ contains(toJson(github.event.commits.*.message), '#skip') }}" >> $GITHUB_ENV
       - name: Install dependencies
         run: npm install
       - name: Install Playwright Browsers
@@ -43,11 +44,10 @@ jobs:
   tag_release:
     needs: [simple_deployment_pipeline]
     runs-on: ubuntu-20.04
-    if: ${{ env.SKIP_DEPLOY == 'false' }}
     steps:
       - uses: actions/checkout@v4
       - name: Bump version and push tag
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' }} && ${{ env.SKIP_DEPLOY == 'false' }}
         uses: anothrNick/github-tag-action@1.71.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
